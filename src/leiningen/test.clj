@@ -109,7 +109,17 @@
                           (clojure.test/with-test-out
                             (newline)
                             (println "lein test" (ns-name (:ns m#))))
-                          (apply report# m# args#)))))
+                          (apply report# m# args#))))
+                     (leiningen.core.injected/add-hook
+                      #'clojure.test/run-tests
+                      (fn [run-tests# & namespaces#]
+                        (let [smry# (assoc (->> (partition 2 2 nil namespaces#)
+                                                (mapcat (fn [xs#]
+                                                          (pmap clojure.test/test-ns xs#)))
+                                                (apply merge-with +))
+                                           :type :summary)]
+                          (clojure.test/do-report smry#)
+                          smry#))))
                 summary# (binding [clojure.test/*test-out* *out*]
                            (~form-for-suppressing-unselected-tests
                             selected-namespaces# ~selectors
